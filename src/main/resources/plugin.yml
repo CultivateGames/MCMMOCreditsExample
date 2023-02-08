@@ -1,0 +1,8 @@
+name: MCMMOCreditsExample
+version: '0.0.1-SNAPSHOT'
+main: games.cultivate.mcmmocreditsexample.MCMMOCreditsExample
+api-version: 1.19
+description: The essential MCMMO Credits plugin.
+author: CultivateGames
+website: https://cultivate.games/
+depend: [MCMMOCredits]
