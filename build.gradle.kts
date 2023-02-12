@@ -49,9 +49,7 @@ tasks {
     }
 
     shadowJar {
-        minimize {
-            exclude(dependency("com.github.ben-manes.caffeine:caffeine:3.0.3"))
-        }
+        minimize()
         relocate("io.leangen", "games.cultivate.relocate.io.leangen")
         relocate("org.spongepowered", "games.cultivate.relocate.org.spongepowered")
 
