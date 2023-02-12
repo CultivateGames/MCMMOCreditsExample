@@ -20,9 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-package games.cultivate.mcmmocreditsexample.config;
+package games.cultivate.creditsexample.config;
 
 import org.bukkit.Material;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
@@ -38,16 +39,13 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Configuration File that holds the blocks.
  */
 @ConfigSerializable
-public class BlockConfig {
+public final class BlockConfig {
     private static final String HEADER = """
             MCMMO Credits Example Configuration
             Repository: https://github.com/CultivateGames/MCMMOCreditsExample
@@ -60,14 +58,14 @@ public class BlockConfig {
     private transient CommentedConfigurationNode root;
 
     @Setting("blocks")
-    private Blocks blocks = new Blocks();
+    private List<Material> blocks = List.of(Material.STONE, Material.SAND, Material.DIRT, Material.GRASS_BLOCK);
 
     /**
      * Constructs the object.
      */
-    public BlockConfig(final Path dir, final String fileName) {
-        this.dir = dir;
-        this.fileName = fileName;
+    public BlockConfig() {
+        this.dir = JavaPlugin.getProvidingPlugin(this.getClass()).getDataFolder().toPath();
+        this.fileName = "config.yml";
     }
 
     /**
@@ -79,7 +77,7 @@ public class BlockConfig {
                 Files.createDirectories(this.dir);
             }
             Files.createFile(this.dir.resolve(this.fileName));
-        } catch (FileAlreadyExistsException ignored) {
+        } catch (FileAlreadyExistsException ignored) { //do nothing if file exists
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -143,9 +141,5 @@ public class BlockConfig {
             e.printStackTrace();
         }
         return null;
-    }
-
-    static class Blocks {
-        List<Material> blocks = List.of(Material.STONE, Material.SAND, Material.DIRT, Material.GRASS_BLOCK);
     }
 }
