@@ -22,6 +22,7 @@
 //
 package games.cultivate.creditsexample.config;
 
+import games.cultivate.mcmmocredits.util.CreditOperation;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +46,7 @@ import java.util.List;
  * Configuration File that holds the blocks.
  */
 @ConfigSerializable
+@SuppressWarnings({"unused", "FieldMayBeFinal"})
 public final class BlockConfig {
     private static final String HEADER = """
             MCMMO Credits Example Configuration
@@ -59,6 +61,12 @@ public final class BlockConfig {
 
     @Setting("blocks")
     private List<Material> blocks = List.of(Material.STONE, Material.SAND, Material.DIRT, Material.GRASS_BLOCK);
+    @Setting("use-event")
+    private boolean useEvent = false;
+    @Setting("amount")
+    private int amount = 1;
+    @Setting("operation")
+    private String operation = "ADD";
 
     /**
      * Constructs the object.
@@ -137,6 +145,21 @@ public final class BlockConfig {
     public @Nullable List<Material> getMaterials(final Object... path) {
         try {
             return this.node(path).getList(Material.class);
+        } catch (SerializationException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Gets a Menu from the configuration.
+     *
+     * @param path Node path where the value is found.
+     * @return The value.
+     */
+    public @Nullable CreditOperation getOperation(final Object... path) {
+        try {
+            return this.node(path).get(CreditOperation.class, CreditOperation.ADD);
         } catch (SerializationException e) {
             e.printStackTrace();
         }

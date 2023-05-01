@@ -1,12 +1,12 @@
 group = "games.cultivate"
-version = "0.0.1"
+version = "0.3.7"
 description = "MCMMOCreditsExample"
 
 plugins {
     id("java-library")
     id("xyz.jpenilla.run-paper") version "2.0.1"
-    id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("io.papermc.paperweight.userdev") version "1.5.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("io.papermc.paperweight.userdev") version "1.5.5"
 }
 
 java {
@@ -19,10 +19,10 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.19.3-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.19.4-R0.1-SNAPSHOT")
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
     //MCMMO Credits
-    compileOnly("games.cultivate:MCMMOCredits:0.3.3")
+    compileOnly("games.cultivate:MCMMOCredits:0.3.7")
 }
 
 tasks {
@@ -45,7 +45,7 @@ tasks {
     }
 
     runServer {
-        minecraftVersion("1.19.3")
+        minecraftVersion("1.19.4")
     }
 
     shadowJar {

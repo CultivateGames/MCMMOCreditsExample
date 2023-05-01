@@ -1,6 +1,8 @@
 package games.cultivate.creditsexample;
 
 import games.cultivate.creditsexample.config.BlockConfig;
+import games.cultivate.mcmmocredits.MCMMOCredits;
+import games.cultivate.mcmmocredits.user.UserService;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,7 +14,8 @@ public final class MCMMOCreditsExample extends JavaPlugin {
         this.checkDependencies();
         this.config = new BlockConfig();
         this.config.load();
-        Bukkit.getPluginManager().registerEvents(new Listeners(this.config), this);
+        UserService service = MCMMOCredits.getAPI();
+        Bukkit.getPluginManager().registerEvents(new Listeners(this.config, service), this);
     }
 
     private void checkDependencies() {
