@@ -22,10 +22,7 @@
 //
 package games.cultivate.creditsexample.config;
 
-import games.cultivate.mcmmocredits.util.CreditOperation;
 import org.bukkit.Material;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.loader.HeaderMode;
@@ -48,54 +45,31 @@ import java.util.List;
 @ConfigSerializable
 @SuppressWarnings({"unused", "FieldMayBeFinal"})
 public final class BlockConfig {
-    private static final String HEADER = """
-            MCMMO Credits Example Configuration
-            Repository: https://github.com/CultivateGames/MCMMOCreditsExample
-            MCMMOCredits: https://github.com/CultivateGames/MCMMOCredits
-            Wiki: https://github.com/CultivateGames/MCMMOCredits/wiki/
-            """;
-    private final transient String fileName;
-    private final transient Path dir;
     private transient YamlConfigurationLoader loader;
     private transient CommentedConfigurationNode root;
 
     @Setting("blocks")
     private List<Material> blocks = List.of(Material.STONE, Material.SAND, Material.DIRT, Material.GRASS_BLOCK);
-    @Setting("use-event")
-    private boolean useEvent = false;
     @Setting("amount")
     private int amount = 1;
     @Setting("operation")
     private String operation = "ADD";
 
     /**
-     * Constructs the object.
-     */
-    public BlockConfig() {
-        this.dir = JavaPlugin.getProvidingPlugin(this.getClass()).getDataFolder().toPath();
-        this.fileName = "config.yml";
-    }
-
-    /**
      * Loads the configuration and list of possible node paths from file. Supports re-loading.
      */
-    public void load() {
+    public void load(Path path, String fileName) {
+        Path file = path.resolve(fileName);
         try {
-            if (!Files.exists(this.dir)) {
-                Files.createDirectories(this.dir);
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
             }
-            Files.createFile(this.dir.resolve(this.fileName));
+            Files.createFile(file);
         } catch (FileAlreadyExistsException ignored) { //do nothing if file exists
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.loader = YamlConfigurationLoader.builder()
-                .defaultOptions(opts -> opts.header(HEADER))
-                .path(this.dir.resolve(this.fileName))
-                .indent(2)
-                .headerMode(HeaderMode.PRESET)
-                .nodeStyle(NodeStyle.BLOCK)
-                .build();
+        this.loader = YamlConfigurationLoader.builder().path(file).indent(2).headerMode(HeaderMode.PRESET).nodeStyle(NodeStyle.BLOCK).build();
         try {
             this.root = this.loader.load();
             ObjectMapper.factory().get(this.getClass()).load(this.root);
@@ -109,18 +83,8 @@ public final class BlockConfig {
      * Saves the configuration using the current root node.
      */
     public void save() {
-        this.save(this.root);
-    }
-
-    /**
-     * Saves the configuration using the provided root node.
-     *
-     * @param root The root node.
-     */
-    private void save(final CommentedConfigurationNode root) {
         try {
-            this.loader.save(root);
-            this.root = root;
+            this.loader.save(this.root);
         } catch (ConfigurateException e) {
             e.printStackTrace();
         }
@@ -142,27 +106,12 @@ public final class BlockConfig {
      * @param path Node path where the value is found.
      * @return The value.
      */
-    public @Nullable List<Material> getMaterials(final Object... path) {
+    public List<Material> getMaterials(final Object... path) {
         try {
             return this.node(path).getList(Material.class);
         } catch (SerializationException e) {
             e.printStackTrace();
         }
-        return null;
-    }
-
-    /**
-     * Gets a Menu from the configuration.
-     *
-     * @param path Node path where the value is found.
-     * @return The value.
-     */
-    public @Nullable CreditOperation getOperation(final Object... path) {
-        try {
-            return this.node(path).get(CreditOperation.class, CreditOperation.ADD);
-        } catch (SerializationException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return List.of();
     }
 }

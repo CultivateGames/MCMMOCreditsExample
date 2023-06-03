@@ -2,9 +2,11 @@ package games.cultivate.creditsexample;
 
 import games.cultivate.creditsexample.config.BlockConfig;
 import games.cultivate.mcmmocredits.MCMMOCredits;
-import games.cultivate.mcmmocredits.user.UserService;
+import games.cultivate.mcmmocredits.MCMMOCreditsAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.List;
 
 public final class MCMMOCreditsExample extends JavaPlugin {
     private BlockConfig config;
@@ -13,26 +15,21 @@ public final class MCMMOCreditsExample extends JavaPlugin {
     public void onEnable() {
         this.checkDependencies();
         this.config = new BlockConfig();
-        this.config.load();
-        UserService service = MCMMOCredits.getAPI();
+        this.config.load(this.getDataFolder().toPath(), "config.yml");
+        MCMMOCreditsAPI service = MCMMOCredits.getAPI();
         Bukkit.getPluginManager().registerEvents(new Listeners(this.config, service), this);
     }
 
     private void checkDependencies() {
-        try {
-            Class.forName("com.destroystokyo.paper.MaterialSetTag");
-        } catch (Exception e) {
-            this.warn("Paper");
-        }
-        if (Bukkit.getPluginManager().getPlugin("MCMMOCredits") == null) {
-            this.warn("MCMMO Credits");
-        }
+        List.of("mcMMO", "MCMMOCredits").forEach(this::warn);
     }
 
     private void warn(final String ele) {
-        String warn = String.format("Not using %s, disabling plugin...", ele);
-        this.getSLF4JLogger().warn(warn);
-        this.setEnabled(false);
+        if (Bukkit.getPluginManager().getPlugin(ele) == null) {
+            String warn = String.format("Not using %s, disabling plugin...", ele);
+            this.getSLF4JLogger().warn(warn);
+            this.setEnabled(false);
+        }
     }
 
     @Override

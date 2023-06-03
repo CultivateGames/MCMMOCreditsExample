@@ -8,6 +8,5 @@ blocks:
 - SAND
 - DIRT
 - GRASS_BLOCK
-use-event: false
 amount: 1
-operation: ADD
+operation: "ADD"

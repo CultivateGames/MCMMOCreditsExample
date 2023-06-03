@@ -1,10 +1,7 @@
 package games.cultivate.creditsexample;
 
 import games.cultivate.creditsexample.config.BlockConfig;
-import games.cultivate.mcmmocredits.events.CreditTransactionEvent;
-import games.cultivate.mcmmocredits.user.UserService;
-import games.cultivate.mcmmocredits.util.CreditOperation;
-import org.bukkit.Bukkit;
+import games.cultivate.mcmmocredits.MCMMOCreditsAPI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,55 +10,51 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 public final class Listeners implements Listener {
     private final BlockConfig config;
-    private final UserService service;
+    private final MCMMOCreditsAPI api;
 
-    public Listeners(final BlockConfig config, final UserService service) {
+    public Listeners(final BlockConfig config, final MCMMOCreditsAPI api) {
         this.config = config;
-        this.service = service;
+        this.api = api;
     }
 
     /**
-     * Monitors the Event. Performance is not considered.
+     * Event Handler which checks if a block broken by a player is eligible for credit compensation.
+     * Credit modification is applied within the event.
      *
      * @param e Instance of the event.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent e) {
-        //basic event where we check if the block broken by the player is in our config's list.
-        //If it is, issue credits using either an event or the user service based on config value "use-event".
         Player player = e.getPlayer();
-        List<Material> list = this.config.getMaterials("blocks");
-        if (player.hasPermission("mcmmocredits.example.break") && list.contains(e.getBlock().getType())) {
+        List<Material> mats = this.config.getMaterials("blocks");
+        Material broken = e.getBlock().getType();
+        if (player.hasPermission("mcmmocredits.example.break") && Objects.requireNonNull(mats).contains(broken)) {
             this.parseCreditEvent(player);
         }
     }
 
     /**
-     * Parses a credit transaction from config. Determines if we use event, or the UserService to issue the credits.
+     * Parses a credit transaction from config and applies it.
      *
-     * @param p The affected player.
-     * @since 0.3.7
+     * @param player The affected player.
+     * @since 0.3.9
      */
-    private void parseCreditEvent(final Player p) {
-        //Read config for info.
-        boolean useEvent = this.config.node("use-event").getBoolean(false);
-        CreditOperation operation = this.config.getOperation("operation");
+    private void parseCreditEvent(final Player player) {
+        //Get amount from config and operation type we want to perform.
         int amount = this.config.node("amount").getInt(1);
-        //Using the event will more closely simulate running commands provided by the plugin.
-        //Events have validity checks, at the cost of more overhead.
-        //This example is similar to a user running /credits modify on themselves, without message feedback.
-        if (useEvent) {
-            CreditTransactionEvent event = new CreditTransactionEvent(p, operation, amount, true);
-            Bukkit.getPluginManager().callEvent(event);
-            return;
+        String operation = this.config.node("operation").getString("ADD").toUpperCase();
+        UUID uuid = player.getUniqueId();
+        //Call API to modify player credits depending on the config value.
+        switch (operation) {
+            case "ADD" -> this.api.addCredits(uuid, amount);
+            case "SET" -> this.api.setCredits(uuid, amount);
+            case "TAKE" -> this.api.takeCredits(uuid, amount);
+            default -> throw new IllegalArgumentException("Invalid operation passed! Value: %s".formatted(operation));
         }
-        //Using the UserService has a simpler declaration.
-        //You can directly access and modify Users, however there is no validity checking and exceptions may occur.
-        //For example, if you were to pass an operation that sets a user's credits to less than 0 or above integer max,
-        //it will throw a SQL Exception due to the schema.
-        this.service.modifyCredits(p.getUniqueId(), operation, amount);
     }
 }
