@@ -6,6 +6,7 @@ plugins {
     id("java-library")
     id("xyz.jpenilla.run-paper") version "2.1.0"
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("net.minecrell.plugin-yml.bukkit") version "0.5.3"
 }
 
 java {
@@ -22,6 +23,17 @@ dependencies {
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
     //MCMMO Credits
     compileOnly("games.cultivate:MCMMOCredits:0.4.0")
+}
+
+bukkit {
+    name = project.name
+    version = project.version.toString()
+    main = "games.cultivate.creditsexample.MCMMOCreditsExample"
+    apiVersion = "1.19"
+    description = "MCMMO Credits plugin example."
+    authors = listOf("CultivateGames")
+    website = "https://cultivate.games/"
+    depend = listOf("MCMMOCredits")
 }
 
 tasks {

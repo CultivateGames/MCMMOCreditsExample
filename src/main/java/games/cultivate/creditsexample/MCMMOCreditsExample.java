@@ -44,12 +44,16 @@ public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        if (Bukkit.getPluginManager().getPlugin("mcMMO") == null || Bukkit.getPluginManager().getPlugin("MCMMOCredits") == null) {
-            this.getSLF4JLogger().warn("Not using mcMMO or MCMMOCredits, disabling plugin...");
+        //Check for MCMMOCredits. If the plugin is not enabled, the api will not be assignable.
+        //The API itself does not require MCMMO, however the full plugin does.
+        if (Bukkit.getPluginManager().getPlugin("MCMMOCredits") == null) {
+            this.getSLF4JLogger().warn("Not using MCMMOCredits, disabling plugin...");
             this.setEnabled(false);
         }
+        //Assign and load config.
         this.config = new BlockConfig();
         this.config.load();
+        //Get the API and register events.
         this.api = MCMMOCredits.getAPI();
         Bukkit.getPluginManager().registerEvents(this, this);
     }
@@ -61,33 +65,22 @@ public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent e) throws SerializationException {
-        //Get list of block types and player.
+        //Get list of block types and player. Note that method is not written with performance in mind.
         Player player = e.getPlayer();
         List<Material> mats = this.config.node("blocks").getList(Material.class, List.of());
-        //Check if the player has the desired perm, and if the block broken is contained within the config.
+        //Check if the player has the desired perm, and if the type of the broken block is in configured list.
         if (player.hasPermission("mcmmocredits.example.break") && mats.contains(e.getBlock().getType())) {
-            //If so, change credit balance.
-            this.parseCreditEvent(player);
-        }
-    }
-
-    /**
-     * Parses a credit transaction from config and applies it.
-     *
-     * @param player The affected player.
-     * @since 0.3.9
-     */
-    private void parseCreditEvent(final Player player) {
-        //Get credit balance modification from config, and UUID of player.
-        int amount = this.config.node("amount").getInt(1);
-        String operation = this.config.node("operation").getString("ADD").toUpperCase();
-        UUID uuid = player.getUniqueId();
-        //Call API to change player's credit balance based on config.
-        switch (operation) {
-            case "ADD" -> this.api.addCredits(uuid, amount);
-            case "SET" -> this.api.setCredits(uuid, amount);
-            case "TAKE" -> this.api.takeCredits(uuid, amount);
-            default -> throw new IllegalArgumentException("Invalid operation passed! Value: %s".formatted(operation));
+            //Get credit balance modification from config, and UUID of player.
+            int amount = this.config.node("amount").getInt(1);
+            String op = this.config.node("operation").getString("ADD").toUpperCase();
+            UUID uuid = player.getUniqueId();
+            //Call API to change player's credit balance based on config.
+            switch (op) {
+                case "ADD" -> this.api.addCredits(uuid, amount);
+                case "SET" -> this.api.setCredits(uuid, amount);
+                case "TAKE" -> this.api.takeCredits(uuid, amount);
+                default -> throw new IllegalArgumentException("Invalid operation passed! Value: %s".formatted(op));
+            }
         }
     }
 }
