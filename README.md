@@ -1,5 +1,18 @@
 # MCMMOCreditsExample
+This is a Minecraft plugin to showcase example API usage for [MCMMOCredits](https://github.com/CultivateGames/MCMMOCredits).
 
-Example usage of the Events provided by MCMMO Credits.
+Players who have the "mcmmocredits.example.break" permission, have their credits modified when they break a block defined in config.yml (shown below)
 
-Users with the permission "mcmmocredits.example.break" are given 1 credit when breaking any block defined in config.yml
+```yml
+# Breakable blocks
+blocks:
+  - STONE
+  - SAND
+  - DIRT
+  - GRASS_BLOCK
+# Amount of credits to modify balance
+amount: 1
+# How to modify the balance of a user when they break the block.
+#Options: ADD, SET, TAKE
+operation: ADD
+```

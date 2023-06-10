@@ -1,5 +1,5 @@
 group = "games.cultivate"
-version = "0.3.9"
+version = "0.4.0"
 description = "MCMMOCreditsExample"
 
 plugins {
@@ -18,10 +18,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20-R0.1-SNAPSHOT")
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
     //MCMMO Credits
-    compileOnly("games.cultivate:MCMMOCredits:0.3.9")
+    compileOnly("games.cultivate:MCMMOCredits:0.4.0")
 }
 
 tasks {

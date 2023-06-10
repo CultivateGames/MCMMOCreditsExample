@@ -1,3 +1,4 @@
+//
 // MIT License
 //
 // Copyright (c) 2023 Cultivate Games
@@ -20,20 +21,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-package games.cultivate.creditsexample.config;
+package games.cultivate.creditsexample;
 
 import org.bukkit.Material;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.loader.HeaderMode;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.ObjectMapper;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
-import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,33 +55,23 @@ public final class BlockConfig {
     @Setting("operation")
     private String operation = "ADD";
 
-    /**
-     * Loads the configuration and list of possible node paths from file. Supports re-loading.
-     */
-    public void load(Path path, String fileName) {
-        Path file = path.resolve(fileName);
+    public void load() {
+        Path path = JavaPlugin.getProvidingPlugin(this.getClass()).getDataFolder().toPath();
         try {
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
             }
-            Files.createFile(file);
-        } catch (FileAlreadyExistsException ignored) { //do nothing if file exists
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.loader = YamlConfigurationLoader.builder().path(file).indent(2).headerMode(HeaderMode.PRESET).nodeStyle(NodeStyle.BLOCK).build();
-        try {
+            Files.createFile(path.resolve("config.yml"));
+            this.loader = YamlConfigurationLoader.builder().path(path.resolve("config.yml")).indent(2).headerMode(HeaderMode.PRESET).nodeStyle(NodeStyle.BLOCK).build();
             this.root = this.loader.load();
             ObjectMapper.factory().get(this.getClass()).load(this.root);
             this.save();
-        } catch (ConfigurateException e) {
+        } catch (FileAlreadyExistsException ignored) { //do nothing if file exists
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    /**
-     * Saves the configuration using the current root node.
-     */
     public void save() {
         try {
             this.loader.save(this.root);
@@ -90,28 +80,7 @@ public final class BlockConfig {
         }
     }
 
-    /**
-     * Returns a ConfigurationNode linked to the provided path.
-     *
-     * @param path Node path of the new node.
-     * @return A new node.
-     */
     public CommentedConfigurationNode node(final Object... path) {
         return this.root.node(path);
-    }
-
-    /**
-     * Gets a Menu from the configuration.
-     *
-     * @param path Node path where the value is found.
-     * @return The value.
-     */
-    public List<Material> getMaterials(final Object... path) {
-        try {
-            return this.node(path).getList(Material.class);
-        } catch (SerializationException e) {
-            e.printStackTrace();
-        }
-        return List.of();
     }
 }
