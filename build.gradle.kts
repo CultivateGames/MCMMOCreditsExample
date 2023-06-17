@@ -1,5 +1,5 @@
 group = "games.cultivate"
-version = "0.4.0"
+version = "0.4.1"
 description = "MCMMOCreditsExample"
 
 plugins {
@@ -19,10 +19,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.20-R0.1-SNAPSHOT")
-    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
     //MCMMO Credits
-    compileOnly("games.cultivate:MCMMOCredits:0.4.0")
+    compileOnly("games.cultivate:MCMMOCredits:0.4.1")
+
+    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20-R0.1-SNAPSHOT")
 }
 
 bukkit {
@@ -56,7 +57,7 @@ tasks {
     }
 
     runServer {
-        minecraftVersion("1.19.4")
+        minecraftVersion("1.20.1")
     }
 
     shadowJar {
