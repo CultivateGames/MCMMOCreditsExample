@@ -23,8 +23,13 @@
 //
 package games.cultivate.creditsexample;
 
+import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import games.cultivate.mcmmocredits.MCMMOCredits;
 import games.cultivate.mcmmocredits.MCMMOCreditsAPI;
+import games.cultivate.mcmmocredits.events.CreditTransactionEvent;
+import games.cultivate.mcmmocredits.transaction.Transaction;
+import games.cultivate.mcmmocredits.transaction.TransactionType;
+import games.cultivate.mcmmocredits.user.User;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -33,9 +38,10 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.serialize.SerializationException;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
@@ -44,16 +50,16 @@ public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        //Check for MCMMOCredits. If the plugin is not enabled, the api will not be assignable.
-        //The API itself does not require MCMMO, however the full plugin does.
         if (Bukkit.getPluginManager().getPlugin("MCMMOCredits") == null) {
             this.getSLF4JLogger().warn("Not using MCMMOCredits, disabling plugin...");
             this.setEnabled(false);
         }
-        //Assign and load config.
         this.config = new BlockConfig();
-        this.config.load();
-        //Get the API and register events.
+        try {
+            this.config.load();
+        } catch (ConfigurateException e) {
+            e.printStackTrace();
+        }
         this.api = MCMMOCredits.getAPI();
         Bukkit.getPluginManager().registerEvents(this, this);
     }
@@ -65,22 +71,44 @@ public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent e) throws SerializationException {
-        //Get list of block types and player. Note that method is not written with performance in mind.
         Player player = e.getPlayer();
-        List<Material> mats = this.config.node("blocks").getList(Material.class, List.of());
-        //Check if the player has the desired perm, and if the type of the broken block is in configured list.
-        if (player.hasPermission("mcmmocredits.example.break") && mats.contains(e.getBlock().getType())) {
-            //Get credit balance modification from config, and UUID of player.
-            int amount = this.config.node("amount").getInt(1);
-            String op = this.config.node("operation").getString("ADD").toUpperCase();
+        if (player.hasPermission("mcmmocredits.example.break") && this.config.node("blocks").getList(Material.class).contains(e.getBlock().getType())) {
             UUID uuid = player.getUniqueId();
-            //Call API to change player's credit balance based on config.
+            if (this.config.node("use-event").getBoolean()) {
+                this.callTransaction(uuid);
+                return;
+            }
+            TransactionType op = this.config.node("operation").get(TransactionType.class);
+            int amount = this.config.node("amount").getInt();
+            //Modify user based on configured transaction type.
             switch (op) {
-                case "ADD" -> this.api.addCredits(uuid, amount);
-                case "SET" -> this.api.setCredits(uuid, amount);
-                case "TAKE" -> this.api.takeCredits(uuid, amount);
-                default -> throw new IllegalArgumentException("Invalid operation passed! Value: %s".formatted(op));
+                case ADD -> this.api.addCredits(uuid, amount);
+                case SET -> this.api.setCredits(uuid, amount);
+                case TAKE -> this.api.takeCredits(uuid, amount);
+                case PAY, REDEEM -> throw new UnsupportedOperationException("Pay/Redeem can only use event!");
             }
         }
+    }
+
+    private void callTransaction(final UUID uuid) throws SerializationException {
+        //get configured transaction type.
+        TransactionType op = this.config.node("operation").get(TransactionType.class);
+        //get user from UUID.
+        Optional<User> optionalUser = this.api.getUser(uuid);
+        if (optionalUser.isEmpty()) {
+            return;
+        }
+        User user = optionalUser.get();
+        //Build transaction.
+        Transaction.Builder builder = Transaction.builder().self(user).amount(this.config.node("amount").getInt());
+        Transaction transaction;
+        //Adding a skill will also change the type of the transaction!
+        if (op == TransactionType.REDEEM) {
+            transaction = builder.skill(this.config.node("skill").get(PrimarySkillType.class)).build();
+        } else {
+            transaction = builder.type(op).build();
+        }
+        //Call event to process the transaction. Set booleans to false for message feedback.
+        Bukkit.getPluginManager().callEvent(new CreditTransactionEvent(transaction, false, false));
     }
 }

@@ -1,5 +1,5 @@
 group = "games.cultivate"
-version = "0.4.1"
+version = "0.4.2"
 description = "MCMMOCreditsExample"
 
 plugins {
@@ -16,14 +16,20 @@ java {
 repositories {
     mavenCentral()
     maven("https://papermc.io/repo/repository/maven-public/")
+    //MCMMO
+    maven("https://nexus.neetgames.com/repository/maven-releases/")
 }
 
 dependencies {
-    //MCMMO Credits
-    compileOnly("games.cultivate:MCMMOCredits:0.4.1")
-
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
-    compileOnly("io.papermc.paper:paper-api:1.20-R0.1-SNAPSHOT")
+    //MCMMO Credits
+    compileOnly("games.cultivate:MCMMOCredits:0.4.3")
+    compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+
+    compileOnly("com.gmail.nossr50.mcMMO:mcMMO:2.1.222") {
+        exclude("com.sk89q.worldguard")
+        exclude("com.sk89q.worldedit")
+    }
 }
 
 bukkit {
@@ -64,7 +70,6 @@ tasks {
         minimize()
         relocate("io.leangen", "games.cultivate.relocate.io.leangen")
         relocate("org.spongepowered", "games.cultivate.relocate.org.spongepowered")
-
         manifest {
             attributes(Pair("Main-Class", "games.cultivate.creditsexample.MCMMOCreditsExample"))
         }
