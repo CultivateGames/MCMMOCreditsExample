@@ -1,12 +1,13 @@
 group = "games.cultivate"
-version = "0.4.2"
+version = "0.4.4"
 description = "MCMMOCreditsExample"
 
 plugins {
     id("java-library")
     id("xyz.jpenilla.run-paper") version "2.1.0"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("net.minecrell.plugin-yml.bukkit") version "0.5.3"
+    id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
+    id("org.cadixdev.licenser") version "0.6.1"
 }
 
 java {
@@ -23,7 +24,7 @@ repositories {
 dependencies {
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
     //MCMMO Credits
-    compileOnly("games.cultivate:MCMMOCredits:0.4.3")
+    compileOnly("games.cultivate:MCMMOCredits:0.4.4")
     compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
 
     compileOnly("com.gmail.nossr50.mcMMO:mcMMO:2.1.222") {
@@ -41,6 +42,12 @@ bukkit {
     authors = listOf("CultivateGames")
     website = "https://cultivate.games/"
     depend = listOf("MCMMOCredits")
+}
+
+license {
+    style.put("java", "DOUBLE_SLASH")
+    newLine(false)
+    exclude("**/*.yml")
 }
 
 tasks {
@@ -64,6 +71,8 @@ tasks {
 
     runServer {
         minecraftVersion("1.20.1")
+        //MCMMO spams legacy text and run-task adds this flag by default.
+        systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", false)
     }
 
     shadowJar {

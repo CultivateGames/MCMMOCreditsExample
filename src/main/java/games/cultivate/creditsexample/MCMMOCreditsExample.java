@@ -28,7 +28,9 @@ import games.cultivate.mcmmocredits.MCMMOCredits;
 import games.cultivate.mcmmocredits.MCMMOCreditsAPI;
 import games.cultivate.mcmmocredits.events.CreditTransactionEvent;
 import games.cultivate.mcmmocredits.transaction.Transaction;
+import games.cultivate.mcmmocredits.transaction.TransactionBuilder;
 import games.cultivate.mcmmocredits.transaction.TransactionType;
+import games.cultivate.mcmmocredits.user.Console;
 import games.cultivate.mcmmocredits.user.User;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -41,12 +43,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.serialize.SerializationException;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
     private BlockConfig config;
     private MCMMOCreditsAPI api;
+    private List<Material> mats;
 
     @Override
     public void onEnable() {
@@ -55,8 +59,10 @@ public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
             this.setEnabled(false);
         }
         this.config = new BlockConfig();
+
         try {
             this.config.load();
+            this.mats = this.config.node("blocks").getList(Material.class);
         } catch (ConfigurateException e) {
             e.printStackTrace();
         }
@@ -72,43 +78,53 @@ public final class MCMMOCreditsExample extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(final BlockBreakEvent e) throws SerializationException {
         Player player = e.getPlayer();
-        if (player.hasPermission("mcmmocredits.example.break") && this.config.node("blocks").getList(Material.class).contains(e.getBlock().getType())) {
+        if (player.hasPermission("mcmmocredits.example.break") && this.mats.contains(e.getBlock().getType())) {
             UUID uuid = player.getUniqueId();
-            if (this.config.node("use-event").getBoolean()) {
-                this.callTransaction(uuid);
-                return;
-            }
             TransactionType op = this.config.node("operation").get(TransactionType.class);
             int amount = this.config.node("amount").getInt();
+            if (this.config.node("use-event").getBoolean()) {
+                this.callTransaction(uuid, op, amount);
+                return;
+            }
             //Modify user based on configured transaction type.
             switch (op) {
                 case ADD -> this.api.addCredits(uuid, amount);
                 case SET -> this.api.setCredits(uuid, amount);
                 case TAKE -> this.api.takeCredits(uuid, amount);
-                case PAY, REDEEM -> throw new UnsupportedOperationException("Pay/Redeem can only use event!");
+                default -> throw new UnsupportedOperationException("All other types must use event!");
             }
         }
     }
 
-    private void callTransaction(final UUID uuid) throws SerializationException {
-        //get configured transaction type.
-        TransactionType op = this.config.node("operation").get(TransactionType.class);
-        //get user from UUID.
+    private void callTransaction(final UUID uuid, final TransactionType type, final int amount) throws SerializationException {
+        //get user from UUID (sync).
         Optional<User> optionalUser = this.api.getUser(uuid);
         if (optionalUser.isEmpty()) {
             return;
         }
         User user = optionalUser.get();
         //Build transaction.
-        Transaction.Builder builder = Transaction.builder().self(user).amount(this.config.node("amount").getInt());
-        Transaction transaction;
-        //Adding a skill will also change the type of the transaction!
-        if (op == TransactionType.REDEEM) {
-            transaction = builder.skill(this.config.node("skill").get(PrimarySkillType.class)).build();
-        } else {
-            transaction = builder.type(op).build();
+        TransactionBuilder builder = Transaction.builder(user, type, amount);
+        //Add skill to Transaction if we know the type is REDEEM (or REDEEMALL).
+        if (type == TransactionType.REDEEM) {
+            builder.skill(this.config.node("skill").get(PrimarySkillType.class));
         }
-        //Call event to process the transaction. Set booleans to false for message feedback.
+        Transaction transaction = builder.build();
+        //Call event to process the transaction. Set booleans as false to enable full message feedback.
+        Bukkit.getPluginManager().callEvent(new CreditTransactionEvent(transaction, false, false));
+    }
+
+    @SuppressWarnings("unused")
+    private void groupTransaction(final TransactionType type, final int amount) {
+        //get all online users (this is just an example, it'd be best to build the list asynchronously).
+        List<User> users = Bukkit.getOnlinePlayers().stream()
+                .map(x -> this.api.getUser(x.getUniqueId()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+        //If you don't want to pass a user, you can use the static Console instance. A user is preferred!
+        Transaction transaction = Transaction.builder(Console.INSTANCE, type, amount).targets(users).build();
+        //Call event to process the transaction. Set booleans as false to enable full message feedback.
         Bukkit.getPluginManager().callEvent(new CreditTransactionEvent(transaction, false, false));
     }
 }
